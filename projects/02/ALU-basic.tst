@@ -8,7 +8,7 @@
 // Specifically: Tests the ALU logic that computes the 'out' output;
 // The 'zr' and 'ng' output bits are ignored.
 
-load ALU.hdl,
+load ALU-basic.hdl,
 output-file ALU-basic.out,
 compare-to ALU-basic.cmp,
 output-list x%B1.16.1 y%B1.16.1 zx nx zy ny f no out%B1.16.1;
