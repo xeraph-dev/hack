@@ -25,5 +25,20 @@ CHIP Memory {
     OUT out[16];
 
     PARTS:
-	//// Replace this comment with your code.
+    RAM16K(in=in, load=loadmem, address=address[0..13], out=outmem);
+    Screen(in=in, load=loadsrn, address=address[0..12], out=outsrn);
+    Keyboard(out=outkbd);
+
+    And(a=load, b=selectmem, out=loadmem);
+    And(a=load, b=selectsrn, out=loadsrn);
+
+    Not(in=address[13], out=notaddress13);
+    Not(in=address[14], out=selectmem);
+
+    And(a=notaddress13, b=address[14], out=selectsrn);
+    And(a=address[13], b=address[14], out=selectkbd);
+
+    Mux16(a=false, b=outkbd, sel=selectkbd, out=outselectkbd);
+    Mux16(a=outselectkbd, b=outsrn, sel=selectsrn, out=outselectsrn);
+    Mux16(a=outselectsrn, b=outmem, sel=selectmem, out=out);
 }
