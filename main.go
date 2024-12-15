@@ -4,6 +4,8 @@
 
 package main
 
+import "hack/cmd"
+
 func main() {
-	println("Hello, World!")
+	cmd.Execute()
 }
