@@ -48,7 +48,11 @@ type (
 	Comp0 int
 	Comp1 int
 
-	Dest int
+	Dest struct {
+		A bool
+		D bool
+		M bool
+	}
 
 	Jump int
 )
@@ -85,17 +89,6 @@ const (
 	Comp1MMinusD
 	Comp1DAndM
 	Comp1DOrM
-)
-
-const (
-	DestNull Dest = iota
-	DestM
-	DestD
-	DestDM
-	DestA
-	DestAM
-	DestAD
-	DestADM
 )
 
 const (
@@ -139,18 +132,6 @@ var (
 		"M-D": Comp1MMinusD,
 		"D&M": Comp1DAndM,
 		"D|M": Comp1DOrM,
-	}
-
-	StringToDest = map[string]Dest{
-		"":    DestNull,
-		"M":   DestM,
-		"D":   DestD,
-		"DM":  DestDM,
-		"MD":  DestDM,
-		"A":   DestA,
-		"AM":  DestAM,
-		"AD":  DestAD,
-		"ADM": DestADM,
 	}
 
 	StringToJump = map[string]Jump{
@@ -198,9 +179,15 @@ func ParseComp(str string) (comp Comp, err error) {
 }
 
 func ParseDest(str string) (dest Dest, err error) {
-	var ok bool
-	if dest, ok = StringToDest[str]; !ok {
-		err = ErrDestInvalid{dest: str}
+	for _, char := range str {
+		switch char {
+		case 'A':
+			dest.A = true
+		case 'D':
+			dest.D = true
+		case 'M':
+			dest.M = true
+		}
 	}
 	return
 }
@@ -315,20 +302,23 @@ func (comp Comp1) Assemble(w io.Writer) (err error) {
 }
 
 func (dest Dest) Assemble(w io.Writer) (err error) {
-	switch dest {
-	case DestNull, DestM, DestD, DestDM, DestA, DestAM, DestAD, DestADM:
-		bin := strconv.FormatInt(int64(dest), 2)
-		pad := strings.Repeat("0", 3-len(bin))
-		if _, err = w.Write([]byte(pad)); err != nil {
-			return
-		}
-		if _, err = w.Write([]byte(bin)); err != nil {
-			return
-		}
-	default:
-		panic("unhandled Dest: " + strconv.Itoa(int(dest)))
+	var a, d, m byte
+	if dest.A {
+		a = '1'
+	} else {
+		a = '0'
 	}
-
+	if dest.D {
+		d = '1'
+	} else {
+		d = '0'
+	}
+	if dest.M {
+		m = '1'
+	} else {
+		m = '0'
+	}
+	w.Write([]byte{a, d, m})
 	return
 }
 
