@@ -90,6 +90,13 @@ func Parse(r io.Reader) (prog Program, err error) {
 	return
 }
 
+func (prog Program) AssembleString() (str string, err error) {
+	builder := strings.Builder{}
+	err = prog.Assemble(&builder)
+	str = builder.String()
+	return
+}
+
 func (prog Program) Assemble(w io.Writer) (err error) {
 	prog.ResolveSymbols()
 	for idx, instr := range prog {
@@ -100,13 +107,6 @@ func (prog Program) Assemble(w io.Writer) (err error) {
 		}
 		instr.Assemble(w)
 	}
-	return
-}
-
-func (prog Program) AssembleString() (str string, err error) {
-	builder := strings.Builder{}
-	err = prog.Assemble(&builder)
-	str = builder.String()
 	return
 }
 
