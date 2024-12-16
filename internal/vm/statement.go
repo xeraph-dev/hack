@@ -111,31 +111,30 @@ func ParseStatement(line string) (stmt Statement, err error) {
 	var before, after string
 	var found bool
 
-	if before, after, found = strings.Cut(line, " "); !found {
-		err = ErrStatementInvalid{stmt: line}
-		return
-	}
+	before, after, found = strings.Cut(line, " ")
 
 	if stmt.Command, err = ParseCommand(before); err != nil {
 		return
 	}
 
-	if after != "" {
-		if before, after, found = strings.Cut(after, " "); !found {
-			err = ErrStatementInvalid{stmt: line}
-			return
-		}
-
-		if stmt.Segment, err = ParseSegment(before); err != nil {
-			return
-		}
-
-		var index uint64
-		if index, err = strconv.ParseUint(after, 10, 16); err != nil {
-			return
-		}
-		stmt.Index = uint16(index)
+	if !found {
+		return
 	}
+
+	if before, after, found = strings.Cut(after, " "); !found {
+		err = ErrStatementInvalid{stmt: line}
+		return
+	}
+
+	if stmt.Segment, err = ParseSegment(before); err != nil {
+		return
+	}
+
+	var index uint64
+	if index, err = strconv.ParseUint(after, 10, 16); err != nil {
+		return
+	}
+	stmt.Index = uint16(index)
 
 	return
 }

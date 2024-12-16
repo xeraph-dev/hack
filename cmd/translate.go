@@ -5,7 +5,7 @@
 package cmd
 
 import (
-	"hack/internal/asm"
+	"hack/internal/vm"
 	"log"
 	"os"
 	"path"
@@ -14,36 +14,36 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var assembleCommand = &cobra.Command{
-	Use:  "assemble",
+var translateCommand = &cobra.Command{
+	Use:  "translate",
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		asmFilePath := args[0]
-		hackFilePath := strings.TrimSuffix(asmFilePath, path.Ext(asmFilePath)) + ".hack"
+		vmFilePath := args[0]
+		asmFilePath := strings.TrimSuffix(vmFilePath, path.Ext(vmFilePath)) + ".asm"
 
-		if prog, err := parseAsm(asmFilePath); err != nil {
+		if prog, err := parseVM(vmFilePath); err != nil {
 			log.Fatal(err)
-		} else if err = assemble(hackFilePath, prog); err != nil {
+		} else if err = translate(asmFilePath, prog); err != nil {
 			log.Fatal(err)
 		}
 	},
 }
 
-func parseAsm(filePath string) (prog asm.Program, err error) {
+func parseVM(filePath string) (prog vm.Program, err error) {
 	var file *os.File
 	if file, err = os.Open(filePath); err != nil {
 		return
 	}
 	defer file.Close()
 
-	if prog, err = asm.Parse(file); err != nil {
+	if prog, err = vm.Parse(file); err != nil {
 		return
 	}
 
 	return
 }
 
-func assemble(filePath string, prog asm.Program) (err error) {
+func translate(filePath string, prog vm.Program) (err error) {
 	if prog == nil {
 		panic("prog is nil")
 	}
@@ -54,7 +54,7 @@ func assemble(filePath string, prog asm.Program) (err error) {
 	}
 	defer file.Close()
 
-	if err = prog.Assemble(file); err != nil {
+	if err = prog.Translate(file); err != nil {
 		return
 	}
 
