@@ -26,3 +26,5 @@ go.work.sum
 
 # nand2tetris files
 *.hack
+
+projects/07/**/*.asm

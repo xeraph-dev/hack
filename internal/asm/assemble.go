@@ -10,194 +10,49 @@ import (
 	"strings"
 )
 
-type (
-	ErrCompInvalid struct {
-		comp string
-	}
-	ErrDestInvalid struct {
-		dest string
-	}
-	ErrJumpInvalid struct {
-		jump string
-	}
-)
-
-func (err ErrCompInvalid) Error() string {
-	return "invalid comp: " + err.comp
-}
-
-func (err ErrDestInvalid) Error() string {
-	return "invalid dest: " + err.dest
-}
-
-func (err ErrJumpInvalid) Error() string {
-	return "invalid jump: " + err.jump
-}
-
-type (
-	ComputeInstruction struct {
-		Comp Comp
-		Dest Dest
-		Jump Jump
-	}
-
-	Comp interface {
-		Instruction
-		A() uint8
-	}
-	Comp0 int
-	Comp1 int
-
-	Dest struct {
-		A bool
-		D bool
-		M bool
-	}
-
-	Jump int
-)
-
-const (
-	Comp00 Comp0 = iota
-	Comp01
-	Comp0Neg1
-	Comp0D
-	Comp0A
-	Comp0NotD
-	Comp0NotA
-	Comp0NegD
-	Comp0NegA
-	Comp0DPlus1
-	Comp0APlus1
-	Comp0DMinus1
-	Comp0AMinus1
-	Comp0DPlusA
-	Comp0DMinusA
-	Comp0AMinusD
-	Comp0DAndA
-	Comp0DOrA
-)
-
-const (
-	Comp1M Comp1 = iota
-	Comp1NotM
-	Comp1NegM
-	Comp1MPlus1
-	Comp1MMinus1
-	Comp1DPlusM
-	Comp1DMinusM
-	Comp1MMinusD
-	Comp1DAndM
-	Comp1DOrM
-)
-
-const (
-	JumpNull Jump = iota
-	JumpJGT
-	JumpJEQ
-	JumpJGE
-	JumpJLT
-	JumpJNE
-	JumpJLE
-	JumpJMP
-)
-
-var (
-	StringToComp = map[string]Comp{
-		"0":   Comp00,
-		"1":   Comp01,
-		"-1":  Comp0Neg1,
-		"D":   Comp0D,
-		"A":   Comp0A,
-		"!D":  Comp0NotD,
-		"!A":  Comp0NotA,
-		"-D":  Comp0NegD,
-		"-A":  Comp0NegA,
-		"A+1": Comp0APlus1,
-		"D+1": Comp0DPlus1,
-		"D-1": Comp0DMinus1,
-		"A-1": Comp0AMinus1,
-		"D+A": Comp0DPlusA,
-		"A-D": Comp0AMinusD,
-		"D&A": Comp0DAndA,
-		"D|A": Comp0DOrA,
-
-		"M":   Comp1M,
-		"!M":  Comp1NotM,
-		"-M":  Comp1NegM,
-		"M+1": Comp1MPlus1,
-		"M-1": Comp1MMinus1,
-		"D+M": Comp1DPlusM,
-		"D-M": Comp1DMinusM,
-		"M-D": Comp1MMinusD,
-		"D&M": Comp1DAndM,
-		"D|M": Comp1DOrM,
-	}
-
-	StringToJump = map[string]Jump{
-		"":    JumpNull,
-		"JGT": JumpJGT,
-		"JEQ": JumpJEQ,
-		"JGE": JumpJGE,
-		"JLT": JumpJLT,
-		"JNE": JumpJNE,
-		"JLE": JumpJLE,
-		"JMP": JumpJMP,
-	}
-)
-
-func ParseComputeInstruction(line string) (instr Instruction, err error) {
-	computeInstruction := &ComputeInstruction{}
-
-	var before, after string
-	var found bool
-	if before, after, found = strings.Cut(line, "="); !found {
-		after = before
-		before = ""
-	}
-	if computeInstruction.Dest, err = ParseDest(before); err != nil {
-		return
-	}
-	before, after, _ = strings.Cut(after, ";")
-	if computeInstruction.Comp, err = ParseComp(before); err != nil {
-		return
-	}
-	if computeInstruction.Jump, err = ParseJump(after); err != nil {
-		return
-	}
-
-	instr = computeInstruction
+func AssembleString(expr Assemblable) (str string, err error) {
+	builder := strings.Builder{}
+	err = expr.Assemble(&builder)
+	str = builder.String()
 	return
 }
 
-func ParseComp(str string) (comp Comp, err error) {
-	var ok bool
-	if comp, ok = StringToComp[str]; !ok {
-		err = ErrCompInvalid{comp: str}
-	}
-	return
-}
-
-func ParseDest(str string) (dest Dest, err error) {
-	for _, char := range str {
-		switch char {
-		case 'A':
-			dest.A = true
-		case 'D':
-			dest.D = true
-		case 'M':
-			dest.M = true
+func (prog Program) Assemble(w io.Writer) (err error) {
+	prog.ResolveSymbols()
+	for idx, instr := range prog {
+		if idx > 0 {
+			if _, err = w.Write([]byte{'\n'}); err != nil {
+				return
+			}
 		}
+		instr.Assemble(w)
 	}
 	return
 }
 
-func ParseJump(str string) (jump Jump, err error) {
-	var ok bool
-	if jump, ok = StringToJump[str]; !ok {
-		err = ErrJumpInvalid{jump: str}
+func (instr *AddressInstructionConstant) Assemble(w io.Writer) (err error) {
+	bin := strconv.FormatInt(int64(instr.Address), 2)
+	pad := strings.Repeat("0", 15-len(bin))
+
+	if _, err = w.Write([]byte{'0'}); err != nil {
+		return
 	}
+	if _, err = w.Write([]byte(pad)); err != nil {
+		return
+	}
+	if _, err = w.Write([]byte(bin)); err != nil {
+		return
+	}
+
 	return
+}
+
+func (instr *AddressInstructionSymbol) Assemble(io.Writer) error {
+	panic("AddressInstructionSymbol cannot be assembled")
+}
+
+func (instr *LabelInstruction) Assemble(io.Writer) (err error) {
+	panic("LabelInstruction cannot be assembled")
 }
 
 func (instr *ComputeInstruction) Assemble(w io.Writer) (err error) {
@@ -303,17 +158,17 @@ func (comp Comp1) Assemble(w io.Writer) (err error) {
 
 func (dest Dest) Assemble(w io.Writer) (err error) {
 	var a, d, m byte
-	if dest.A {
+	if dest&DestA != 0 {
 		a = '1'
 	} else {
 		a = '0'
 	}
-	if dest.D {
+	if dest&DestD != 0 {
 		d = '1'
 	} else {
 		d = '0'
 	}
-	if dest.M {
+	if dest&DestM != 0 {
 		m = '1'
 	} else {
 		m = '0'
@@ -338,12 +193,4 @@ func (jump Jump) Assemble(w io.Writer) (err error) {
 	}
 
 	return
-}
-
-func (comp Comp0) A() uint8 {
-	return 0
-}
-
-func (comp Comp1) A() uint8 {
-	return 1
 }

@@ -11,6 +11,24 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestParse(t *testing.T) {
+	asm := `@123
+			@LABEL
+			@test
+			(LABEL)
+			@456`
+
+	prog, err := Parse(strings.NewReader(asm))
+	assert.Nil(t, err)
+	assert.Equal(t, Program{
+		&AddressInstructionConstant{Address: 123},
+		&AddressInstructionSymbol{Symbol: "LABEL"},
+		&AddressInstructionSymbol{Symbol: "test"},
+		&LabelInstruction{Symbol: "LABEL"},
+		&AddressInstructionConstant{Address: 456},
+	}, prog)
+}
+
 func TestParseAddressInstructionConstant(t *testing.T) {
 	line := "@123"
 
@@ -34,15 +52,17 @@ func TestParseAddressInstructionInvalid(t *testing.T) {
 	assert.ErrorIs(t, err, ErrAddressInstructionInvalid)
 }
 
-func TestAssembleAddressInstruction(t *testing.T) {
-	line := "@123"
+func TestParseLabelInstruction(t *testing.T) {
+	line := "(LABEL)"
 
-	instr, err := ParseAddressInstruction(line)
+	instr, err := ParseLabelInstruction(line)
 	assert.Nil(t, err)
-	assert.Equal(t, &AddressInstructionConstant{Address: 123}, instr)
+	assert.Equal(t, &LabelInstruction{Symbol: "LABEL"}, instr)
+}
 
-	str := strings.Builder{}
-	assert.Nil(t, instr.Assemble(&str))
+func TestParseLabelInstructionInvalid(t *testing.T) {
+	line := "(1INVALID)"
 
-	assert.Equal(t, "0000000001111011", str.String())
+	_, err := ParseLabelInstruction(line)
+	assert.ErrorIs(t, err, ErrLabelInstructionInvalid)
 }

@@ -16,6 +16,7 @@ var rootCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(assembleCommand)
+	rootCmd.AddCommand(translateCommand)
 }
 
 func Execute() {

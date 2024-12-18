@@ -5,6 +5,7 @@
 package vm
 
 import (
+	"hack/internal/asm"
 	"io"
 	"strconv"
 	"strings"
@@ -44,7 +45,7 @@ type (
 	Statement struct {
 		Command Command
 		Segment Segment
-		Index   uint16
+		Index   int16
 	}
 )
 
@@ -113,11 +114,7 @@ func ParseStatement(line string) (stmt Statement, err error) {
 
 	before, after, found = strings.Cut(line, " ")
 
-	if stmt.Command, err = ParseCommand(before); err != nil {
-		return
-	}
-
-	if !found {
+	if stmt.Command, err = ParseCommand(before); !found || err != nil {
 		return
 	}
 
@@ -134,7 +131,7 @@ func ParseStatement(line string) (stmt Statement, err error) {
 	if index, err = strconv.ParseUint(after, 10, 16); err != nil {
 		return
 	}
-	stmt.Index = uint16(index)
+	stmt.Index = int16(index)
 
 	return
 }
@@ -163,5 +160,33 @@ func (stmt Statement) TranslateString() (str string, err error) {
 }
 
 func (stmt Statement) Translate(w io.Writer) (err error) {
+	switch stmt.Command {
+	case CommandPush:
+		switch stmt.Segment {
+		case SegmentConstant:
+			asm.Program{
+				&asm.AddressInstructionConstant{Address: stmt.Index},
+				&asm.ComputeInstruction{Dest: asm.DestD, Comp: asm.Comp0A},
+				&asm.AddressInstructionSymbol{Symbol: asm.SymbolSP},
+				&asm.ComputeInstruction{Dest: asm.DestA, Comp: asm.Comp1M},
+				&asm.ComputeInstruction{Dest: asm.DestM, Comp: asm.Comp0D},
+				&asm.AddressInstructionSymbol{Symbol: asm.SymbolSP},
+				&asm.ComputeInstruction{Dest: asm.DestM, Comp: asm.Comp1MPlus1},
+			}.Assemble(w)
+		default:
+			panic("unhandled segment for CommandPush: " + strconv.Itoa(int(stmt.Segment)))
+		}
+	case CommandAdd:
+		asm.Program{
+			&asm.AddressInstructionSymbol{Symbol: asm.SymbolSP},
+			&asm.ComputeInstruction{Dest: asm.DestA, Comp: asm.Comp0AMinus1},
+			&asm.ComputeInstruction{Dest: asm.DestD, Comp: asm.Comp1M},
+			&asm.ComputeInstruction{Dest: asm.DestA, Comp: asm.Comp0AMinus1},
+			&asm.ComputeInstruction{Dest: asm.DestM, Comp: asm.Comp1DPlusM},
+		}.Assemble(w)
+	default:
+		panic("unhandled command: " + strconv.Itoa(int(stmt.Command)))
+	}
+
 	return
 }
