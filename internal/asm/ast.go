@@ -140,6 +140,7 @@ const (
 	Comp1DOrM
 )
 
+const DestNull = 0
 const (
 	DestA Dest = 1 << iota
 	DestD

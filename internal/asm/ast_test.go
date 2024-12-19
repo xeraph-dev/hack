@@ -5,25 +5,26 @@
 package asm
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestResolveSymbols(t *testing.T) {
-	asm := `@123
-			@LABEL
-			@test
-			(LABEL)
-			@456`
-
-	prog, _ := Parse(strings.NewReader(asm))
+	prog, _ := ParseString(`
+@123
+@LABEL
+@test
+(LABEL)
+@456
+A=M;JMP
+`)
 	prog.ResolveSymbols()
 	assert.Equal(t, Program{
 		&AddressInstructionConstant{Address: 123},
-		&AddressInstructionConstant{Address: 4},
-		&AddressInstructionConstant{Address: 17},
+		&AddressInstructionConstant{Address: 3},
+		&AddressInstructionConstant{Address: 16},
 		&AddressInstructionConstant{Address: 456},
+		&ComputeInstruction{Dest: DestA, Comp: Comp1M, Jump: JumpJMP},
 	}, prog)
 }

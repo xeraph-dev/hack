@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPushStatement(t *testing.T) {
+func TestParsePushStatement(t *testing.T) {
 	line := "push constant 5"
 
 	stmt, err := ParseStatement(line)
@@ -22,7 +22,7 @@ func TestPushStatement(t *testing.T) {
 	}, stmt)
 }
 
-func TestPopStatement(t *testing.T) {
+func TestParsePopStatement(t *testing.T) {
 	line := "pop constant 5"
 
 	stmt, err := ParseStatement(line)
@@ -34,7 +34,7 @@ func TestPopStatement(t *testing.T) {
 	}, stmt)
 }
 
-func TestAddStatement(t *testing.T) {
+func TestParseAddStatement(t *testing.T) {
 	line := "add"
 
 	stmt, err := ParseStatement(line)

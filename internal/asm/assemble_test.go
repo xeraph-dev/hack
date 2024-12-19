@@ -12,31 +12,33 @@ import (
 )
 
 func TestAssemble(t *testing.T) {
-	asm := `@123
-			@LABEL
-			@test
-			(LABEL)
-			@456`
+	prog, _ := ParseString(`
+@123
+@LABEL
+@test
+(LABEL)
+@456
+A=M;JMP
+`)
 
-	prog, _ := Parse(strings.NewReader(asm))
-
-	str := strings.Builder{}
-	assert.Nil(t, prog.Assemble(&str))
-	assert.Equal(t, `0000000001111011
-0000000000000100
-0000000000010001
-0000000111001000`, str.String())
+	bin, err := AssembleString(prog)
+	assert.Nil(t, err)
+	assert.Equal(t, strings.Trim(`
+0000000001111011
+0000000000000011
+0000000000010000
+0000000111001000
+1111110000100111
+`, " \t\n\r"), bin)
 }
 
 func TestAssembleAddressInstruction(t *testing.T) {
-	line := "@123"
-
-	instr, err := ParseAddressInstruction(line)
+	instr, err := ParseAddressInstruction("@123")
 	assert.Nil(t, err)
 	assert.Equal(t, &AddressInstructionConstant{Address: 123}, instr)
 
-	str := strings.Builder{}
-	assert.Nil(t, instr.Assemble(&str))
+	bin, err := AssembleString(instr)
+	assert.Nil(t, err)
 
-	assert.Equal(t, "0000000001111011", str.String())
+	assert.Equal(t, "0000000001111011", bin)
 }

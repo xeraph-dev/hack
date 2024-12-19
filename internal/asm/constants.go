@@ -99,6 +99,36 @@ var (
 		"D|M": Comp1DOrM,
 	}
 
+	CompToString = map[Comp]string{
+		Comp00:       "0",
+		Comp01:       "1",
+		Comp0Neg1:    "-1",
+		Comp0D:       "D",
+		Comp0A:       "A",
+		Comp0NotD:    "!D",
+		Comp0NotA:    "!A",
+		Comp0NegD:    "-D",
+		Comp0NegA:    "-A",
+		Comp0APlus1:  "A+1",
+		Comp0DPlus1:  "D+1",
+		Comp0DMinus1: "D-1",
+		Comp0AMinus1: "A-1",
+		Comp0DPlusA:  "D+A",
+		Comp0AMinusD: "A-D",
+		Comp0DAndA:   "D&A",
+		Comp0DOrA:    "D|A",
+		Comp1M:       "M",
+		Comp1NotM:    "!M",
+		Comp1NegM:    "-M",
+		Comp1MPlus1:  "M+1",
+		Comp1MMinus1: "M-1",
+		Comp1DPlusM:  "D+M",
+		Comp1DMinusM: "D-M",
+		Comp1MMinusD: "M-D",
+		Comp1DAndM:   "D&M",
+		Comp1DOrM:    "D|M",
+	}
+
 	StringToJump = map[string]Jump{
 		"":    JumpNull,
 		"JGT": JumpJGT,
@@ -108,5 +138,16 @@ var (
 		"JNE": JumpJNE,
 		"JLE": JumpJLE,
 		"JMP": JumpJMP,
+	}
+
+	JumpToString = map[Jump]string{
+		JumpNull: "",
+		JumpJGT:  "JGT",
+		JumpJEQ:  "JEQ",
+		JumpJGE:  "JGE",
+		JumpJLT:  "JLT",
+		JumpJNE:  "JNE",
+		JumpJLE:  "JLE",
+		JumpJMP:  "JMP",
 	}
 )
